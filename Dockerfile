@@ -1,22 +1,15 @@
-# Use the official .NET SDK image to build the app
+# Stage 1: Build the application
 FROM mcr.microsoft.com/dotnet/sdk:3.1 AS build
+WORKDIR /source
+COPY . .
+RUN dotnet restore ".WebAPI/WebAPI.csproj" --disable-parallel
+RUN dotnet publish ".WebAPI/WebAPI.csproj" -c Release -o /app --no-restore
+
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-focal
 WORKDIR /app
+COPY --from=build /app ./
 
-# Copy the project file and restore dependencies
-COPY WebAPI\WebAPI.csproj ./
-RUN dotnet restore
+EXPOSE 5000
 
-# Copy the rest of the application code
-COPY . ./
-RUN dotnet publish -c Release -o out
-
-# Use the official .NET runtime image for the final image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
-WORKDIR /app
-COPY --from=build /app/out ./
-
-# Expose the port your Web API runs on (default is 8080 in Docker)
-EXPOSE 8080
-
-# Set the entry point to run the Web API
-ENTRYPOINT ["dotnet", "WebAPI.dll"]
+ENTRYPOINT["dotnet", "WebAPI.dll"]
