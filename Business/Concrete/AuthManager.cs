@@ -4,6 +4,7 @@ using Core.Utilities.Results;
 using Core.Utilities.Security.Hashing;
 using Core.Utilities.Security.JWT;
 using Entities.DTOs;
+using System;
 
 namespace Business.Concrete
 {
@@ -17,19 +18,20 @@ namespace Business.Concrete
             _userService = userService;
             _tokenHelper = tokenHelper;
         }
-
         public IDataResult<User> Register(UserForRegisterDto userForRegisterDto, string password)
         {
-            byte[] passwordHash, passwordSalt;
+            string passwordHash, passwordSalt;
             HashingHelper.CreatePasswordHash(password, out passwordHash, out passwordSalt);
+
             var user = new User
             {
                 Email = userForRegisterDto.Email,
                 FirstName = userForRegisterDto.FirstName,
                 LastName = userForRegisterDto.LastName,
-                PasswordHash = passwordHash,
-                PasswordSalt = passwordSalt,
-                Status = true
+                PasswordHash = passwordHash,  // STRING
+                PasswordSalt = passwordSalt,   // STRING
+                Status = true,
+                CreatedAt = DateTime.Now
             };
             _userService.Add(user);
             return new SuccessDataResult<User>(user, "Kayıt oldu");
@@ -43,7 +45,9 @@ namespace Business.Concrete
                 return new ErrorDataResult<User>("Kullanıcı bulunamadı");
             }
 
-            if (!HashingHelper.VerifyPasswordHash(userForLoginDto.Password, userToCheck.PasswordHash, userToCheck.PasswordSalt))
+            // STRING → BYTE[] (Verify üçin)
+            if (!HashingHelper.VerifyPasswordHash(userForLoginDto.Password,
+                userToCheck.PasswordHash, userToCheck.PasswordSalt))
             {
                 return new ErrorDataResult<User>("Parola hatası");
             }
